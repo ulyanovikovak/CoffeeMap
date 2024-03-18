@@ -23,6 +23,7 @@ struct MapView: UIViewRepresentable {
         // Set region to show user location and coffee shops
         let userRegion = MKCoordinateRegion(center: userLocation, latitudinalMeters: 5000, longitudinalMeters: 5000)
         mapView.setRegion(userRegion, animated: true)
+        mapView.showsUserLocation = true
         
         return mapView
     }
@@ -31,11 +32,7 @@ struct MapView: UIViewRepresentable {
         mapView.removeOverlays(mapView.overlays) // Remove old route overlays
         mapView.removeAnnotations(mapView.annotations) // Remove old annotations
         
-        // Add user annotation with custom icon
-        let userAnnotation = MKPointAnnotation()
-        userAnnotation.coordinate = userLocation
-        userAnnotation.title = "You"
-        mapView.addAnnotation(userAnnotation)
+       
         
         // Add coffee shop annotations
         coffeeShops.forEach { coffeeShop in
