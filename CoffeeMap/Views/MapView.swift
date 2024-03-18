@@ -68,46 +68,55 @@ struct MapView: UIViewRepresentable {
             self.parent = parent
         }
 
-        func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
-            guard !(annotation is MKUserLocation) else {
-                // Use custom image for user location
-                let userAnnotationView = MKAnnotationView(annotation: annotation, reuseIdentifier: nil)
-                userAnnotationView.image = UIImage(named: "user_pin")
-                return userAnnotationView
-            }
-            
-            let identifier = "CoffeeShopAnnotation"
-            var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
-            
-            if annotationView == nil {
-                annotationView = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
-                annotationView?.canShowCallout = true
-                
-                // Customize annotation view for coffee shop
-                let imageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 50, height: 50))
-                imageView.image = UIImage(named: "coffee_icon") // Set coffee shop icon
-                annotationView?.leftCalloutAccessoryView = imageView
-            } else {
-                annotationView?.annotation = annotation
-            }
-            
-            return annotationView
-        }
-
-        func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            guard let annotation = view.annotation as? MKPointAnnotation else {
-                return
-            }
-            
-            let coffeeShop = parent.coffeeShops.first { $0.name == annotation.title }
-            parent.selectedCoffeeShop = coffeeShop
-        }
-
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
-            let renderer = MKPolylineRenderer(overlay: overlay)
-            renderer.strokeColor = UIColor.blue
-            renderer.lineWidth = 3
-            return renderer
+            if let polyline = overlay as? MKPolyline {
+                let renderer = MKPolylineRenderer(polyline: polyline)
+                renderer.strokeColor = UIColor.blue
+                renderer.lineWidth = 4.0
+                return renderer
+            }
+            return MKOverlayRenderer(overlay: overlay)
+        }
+        
+        func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+            if annotation is MKUserLocation {
+                return nil
+            }
+            let view = MKAnnotationView(annotation: annotation, reuseIdentifier: "CoffeeShopAnnotation")
+            if let customImage = UIImage(named: "test") {
+                let backgroundColor = UIColor.white
+                let resizedAndRoundedImage = resizeImage(image: customImage, targetSize: CGSize(width: 30, height: 30), backgroundColor: backgroundColor)
+                view.image = resizedAndRoundedImage
+            }
+            view.canShowCallout = true
+            return view
+        }
+        
+        func resizeImage(image: UIImage, targetSize: CGSize, backgroundColor: UIColor) -> UIImage {
+            let size = image.size
+            let widthRatio  = targetSize.width  / size.width
+            let heightRatio = targetSize.height / size.height
+            var newSize: CGSize
+            if widthRatio > heightRatio {
+                newSize = CGSize(width: size.width * heightRatio, height: size.height * heightRatio)
+            } else {
+                newSize = CGSize(width: size.width * widthRatio, height: size.height * widthRatio)
+            }
+            let rect = CGRect(x: 0, y: 0, width: newSize.width, height: newSize.height)
+
+            UIGraphicsBeginImageContextWithOptions(newSize, false, 0)
+            let context = UIGraphicsGetCurrentContext()!
+            context.addEllipse(in: rect)
+            context.clip()
+            
+            context.setFillColor(backgroundColor.cgColor)
+            context.fill(rect)
+            image.draw(in: rect)
+
+            let newImage = UIGraphicsGetImageFromCurrentImageContext()
+            UIGraphicsEndImageContext()
+
+            return newImage!
         }
     }
 }
